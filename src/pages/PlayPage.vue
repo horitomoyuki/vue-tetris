@@ -55,7 +55,15 @@ const onKeyDown = (e: KeyboardEvent) => {
       } else {
         nextTetrisField();
       }
-      break;
+    break;
+    case "Up":
+    case "ArrowUp":
+      while(canDropCurrentTetromino()) {
+        tetromino.position.y++;
+        resetDrop();
+      }
+    nextTetrisField();
+    break;
   }
 }
 
