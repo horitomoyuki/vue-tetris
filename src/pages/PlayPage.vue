@@ -2,6 +2,7 @@
 import { reactive } from "vue";
 import { Tetromino, TETROMINO_TYPE } from '../common/Tetromino';
 import { Field } from '../common/Field';
+import TetrominoPreviewComponent from '../components/TetrominoPreviewComponent.vue';
 
 // フィールドを保持する
 let staticField = new Field();
@@ -14,6 +15,7 @@ const tetris = reactive({
 const tetromino = reactive({
   current: Tetromino.random(),
   position: { x: 3, y: 0 },
+  next: Tetromino.random(),
 });
 
 // マス目の状態を元に対応したテトリミノの識別子 (クラス名) を取得する
@@ -34,7 +36,8 @@ const canDropCurrentTetromino = (): boolean => {
   staticField = new Field(tetris.field.data);
   tetris.field = Field.deepCopy(staticField);
 
-  tetromino.current = Tetromino.random();
+  tetromino.current = tetromino.next;
+  tetromino.next = Tetromino.random();
   tetromino.position = { x: 3, y: 0 };
 }
 
@@ -57,17 +60,22 @@ tetris.field.update(tetromino.current.data, tetromino.position);
   <h2>ユーザ名: {{ $route.query.name }}</h2>
 
   <div class="container">
-    <table class="field" style="border-collapse: collapse">
-      <tr v-for="(row, y) in tetris.field.data" :key="y">
-        <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.) -->
-        <td
-          class="block"
-          v-for="(col, x) in row"
-          :key="() => `${x}${y}`"
-          :class="classBlockColor(x, y)"
-        />
-      </tr>
-    </table>
+    <div class="tetris">
+      <table class="field" style="border-collapse: collapse">
+        <tr v-for="(row, y) in tetris.field.data" :key="y">
+          <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.) -->
+          <td
+            class="block"
+            v-for="(col, x) in row"
+            :key="() => `${x}${y}`"
+            :class="classBlockColor(x, y)"
+          />
+        </tr>
+      </table>
+    </div>
+    <div class="information">
+      <TetrominoPreviewComponent v-bind:tetromino="tetromino.next.data" />
+    </div>
   </div>
 </template>
 
@@ -112,5 +120,10 @@ tetris.field.update(tetromino.current.data, tetromino.position);
     &-z {
       background: #e74c3c;
     }
+  }
+
+  /** テトリスに関する情報をテトリスのフィールドの右に表示する **/
+  .information {
+    margin-left: 0.5em;
   }
 </style>
