@@ -75,31 +75,30 @@
     width: 1em;
     height: 1em;
     border: 0.1px solid #95a5a6;
-  }
-
   /*
     各テトリミノに対応した色を扱うクラス定義
     .block-i, .block-o のようにクラスが定義される
   */
-  &-i {
+    &-i {
     background: #3498db;
-  }
-  &-o {
-    background: #f1c40f;
-  }
-  &-t {
-    background: #9b59b6;
-  }
-  &-j {
-    background: #1e3799;
-  }
-  &-l {
-    background: #e67e22;
-  }
-  &-s {
-    background: #2ecc71;
-  }
-  &-z {
-    background: #e74c3c;
+    }
+    &-o {
+      background: #f1c40f;
+    }
+    &-t {
+      background: #9b59b6;
+    }
+    &-j {
+      background: #1e3799;
+    }
+    &-l {
+      background: #e67e22;
+    }
+    &-s {
+      background: #2ecc71;
+    }
+    &-z {
+      background: #e74c3c;
+    }
   }
 </style>
