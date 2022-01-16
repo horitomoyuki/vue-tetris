@@ -77,6 +77,17 @@ export class Tetromino {
     return tetrominos[this.type];
   }
 
+  static rotate(rotate: number, data: number[][]): number[][] {
+    let tetromino: number[][] = data
+    for (let i = 0; i < rotate; i++) {
+      tetromino = tetromino[0].map((_, index) =>
+        tetromino.map((row) => row[index]).reverse()
+      );
+    }
+
+    return tetromino;
+  }
+  
   static random(): Tetromino {
     const tetrominoTypes = tetrominos.length - 1;
     const type = Math.floor(Math.random() * tetrominoTypes) + 1;

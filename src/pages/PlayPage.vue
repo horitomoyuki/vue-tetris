@@ -2,7 +2,7 @@
 import { reactive } from "vue";
 import { Tetromino, TETROMINO_TYPE } from '../common/Tetromino';
 import { Field } from '../common/Field';
-import TetrominoPreviewComponent from '../components/TetrominoPreviewComponent.vue';
+import TetrominoPreviewComponent from '../components/TetrominoPreviewComponent.vue'
 
 // フィールドを保持する
 let staticField = new Field();
@@ -15,20 +15,44 @@ const tetris = reactive({
 const tetromino = reactive({
   current: Tetromino.random(),
   position: { x: 3, y: 0 },
+  rotate: 0,
   next: Tetromino.random(),
 });
+
+const currentTetrominoData = () => {
+  return Tetromino.rotate(tetromino.rotate, tetromino.current.data);
+}
+
+const classBlockColor = (_x: number, _y: number) => {
+  const type = tetris.field.data[_y][_x]
+  if(type > 0) {
+    return Tetromino.id(type as TETROMINO_TYPE)
+  }
+  const { x, y } = tetromino.position
+  const data = currentTetrominoData();
+
+  if (y <= _y && _y < y + data.length) {
+    const cols = data[_y - y];
+    if (x <= _x && _x < x + cols.length) {
+      if (cols[_x - x] > 0) {
+        return Tetromino.id(cols[_x - x] as TETROMINO_TYPE);
+      }
+    }
+  }
+  return "";
+}
 
 // マス目の状態を元に対応したテトリミノの識別子 (クラス名) を取得する
 const canDropCurrentTetromino = (): boolean => {
   const { x, y } = tetromino.position;
   const droppedPosition = {x, y: y + 1};
 
-  const data = tetromino.current.data;
+  const data = currentTetrominoData();
   return tetris.field.canMove(data, droppedPosition);
 }
 
-  const nextTetrisField = () => {
-  const data = tetromino.current.data;
+const nextTetrisField = () => {
+  const data = currentTetrominoData();
   const position = tetromino.position;
 
   tetris.field.update(data, position);
@@ -38,20 +62,92 @@ const canDropCurrentTetromino = (): boolean => {
 
   tetromino.current = tetromino.next;
   tetromino.next = Tetromino.random();
+  tetromino.rotate = 0;
   tetromino.position = { x: 3, y: 0 };
 }
 
-// テトリスの落下動作を記述
-setInterval(() => {
-  tetris.field = Field.deepCopy(staticField);
+const onKeyDown = (e: KeyboardEvent) => {
+  switch (e.key) {
+    case " ": {
+      const nextRotate = (tetromino.rotate + 1) % 4;
+      const data = Tetromino.rotate(nextRotate, tetromino.current.data)
+      if (tetris.field.canMove(data, tetromino.position)) {
+        tetromino.rotate = nextRotate
+      }
+    }
+    break;
+    case "Down":
+    case "ArrowDown":
+      if(canDropCurrentTetromino()) {
+        tetromino.position.y++;
 
-  if(canDropCurrentTetromino()) {
-    tetromino.position.y++;
-  } else {
+        // resetDrop 関数で矢印キーで下に移動した直後は、
+        // 1秒ごとに 1マス下に落下する処理をリセットして
+        // 一気に 2マス下に移動してしまう事象を防ぐ
+        resetDrop();
+      } else {
+        nextTetrisField();
+      }
+    break;
+    case "Up":
+    case "ArrowUp":
+      while(canDropCurrentTetromino()) {
+        tetromino.position.y++;
+        resetDrop();
+      }
     nextTetrisField();
+    break;
+    case "Left":
+    case "ArrowLeft": {
+      const data = currentTetrominoData()
+      const { x, y } = tetromino.position
+      const leftPosition = {x: x - 1, y};
+      if(tetris.field.canMove(data, leftPosition)) {
+        tetromino.position.x--;
+      }
+    }
+    break;
+    case "Right":
+    case "ArrowRight": {
+      const data = currentTetrominoData()
+      const { x, y } = tetromino.position
+      const rightPosition = {x: x + 1, y};
+      if(tetris.field.canMove(data, rightPosition)) {
+        tetromino.position.x++;
+      }
+    }
   }
-}, 1 * 1000);
-tetris.field.update(tetromino.current.data, tetromino.position);
+}
+
+// 1 秒ごとに 1 マス下に落下する関数を作成する関数
+const resetDropInterval = () => {
+  // 1秒ごとに発火する関数の識別子
+  let intervalId = -1;
+
+  return () => {
+    // 1 秒ごとに発火する処理が既に実行済みの場合は、
+    // その処理を破棄することで 1 秒ごとに 1 マス下に落下する処理を一旦解除する
+    if (intervalId !== -1) clearInterval(intervalId);
+
+    // 1 秒ごとに 1 マス下に落下する処理を再び発火させる
+    // `intervalId` には 1 秒ごとに発火する処理の識別子を格納する
+    intervalId = setInterval(() => {
+      tetris.field = Field.deepCopy(staticField);
+
+      if(canDropCurrentTetromino()) {
+        tetromino.position.y++;
+      } else {
+        nextTetrisField();
+      }
+    }, 1 * 1000);
+  };
+};
+
+// 1 秒ごとに 1 マス下に落下する処理をリセットする関数を作成する
+const resetDrop = resetDropInterval();
+
+// プレイページの呼び出し直後に 1 秒ごとに 1 マス下に落下する処理を発火させる
+resetDrop();
 
 </script>
 
