@@ -1,9 +1,9 @@
 <script setup lang="ts">
-
+  import TopPage from "./pages/TopPage.vue";
 </script>
 
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
+  <TopPage />
 </template>
 
 <style>
