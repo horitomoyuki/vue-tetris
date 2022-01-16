@@ -15,20 +15,44 @@ const tetris = reactive({
 const tetromino = reactive({
   current: Tetromino.random(),
   position: { x: 3, y: 0 },
+  rotate: 0,
   next: Tetromino.random(),
 });
+
+const currentTetrominoData = () => {
+  return Tetromino.rotate(tetromino.rotate, tetromino.current.data);
+}
+
+const classBlockColor = (_x: number, _y: number) => {
+  const type = tetris.field.data[_y][_x]
+  if(type > 0) {
+    return Tetromino.id(type as TETROMINO_TYPE)
+  }
+  const { x, y } = tetromino.position
+  const data = currentTetrominoData();
+
+  if (y <= _y && _y < y + data.length) {
+    const cols = data[_y - y];
+    if (x <= _x && _x < x + cols.length) {
+      if (cols[_x - x] > 0) {
+        return Tetromino.id(cols[_x - x] as TETROMINO_TYPE);
+      }
+    }
+  }
+  return "";
+}
 
 // マス目の状態を元に対応したテトリミノの識別子 (クラス名) を取得する
 const canDropCurrentTetromino = (): boolean => {
   const { x, y } = tetromino.position;
   const droppedPosition = {x, y: y + 1};
 
-  const data = tetromino.current.data;
+  const data = currentTetrominoData();
   return tetris.field.canMove(data, droppedPosition);
 }
 
 const nextTetrisField = () => {
-  const data = tetromino.current.data;
+  const data = currentTetrominoData();
   const position = tetromino.position;
 
   tetris.field.update(data, position);
@@ -38,11 +62,20 @@ const nextTetrisField = () => {
 
   tetromino.current = tetromino.next;
   tetromino.next = Tetromino.random();
+  tetromino.rotate = 0;
   tetromino.position = { x: 3, y: 0 };
 }
 
 const onKeyDown = (e: KeyboardEvent) => {
   switch (e.key) {
+    case " ": {
+      const nextRotate = (tetromino.rotate + 1) % 4;
+      const data = Tetromino.rotate(nextRotate, tetromino.current.data)
+      if (tetris.field.canMove(data, tetromino.position)) {
+        tetromino.rotate = nextRotate
+      }
+    }
+    break;
     case "Down":
     case "ArrowDown":
       if(canDropCurrentTetromino()) {
@@ -116,9 +149,6 @@ const resetDrop = resetDropInterval();
 // プレイページの呼び出し直後に 1 秒ごとに 1 マス下に落下する処理を発火させる
 resetDrop();
 
-
-const resetDrop = resetDropInterval();
-resetDrop();
 </script>
 
 <template>
