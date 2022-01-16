@@ -17,37 +17,36 @@ const tetromino = reactive({
 });
 
 // マス目の状態を元に対応したテトリミノの識別子 (クラス名) を取得する
-const classBlockColor = (_x: number, _y: number): string => {
-  const type = tetris.field.data[_y][_x];
-  if(type > 0) {
-    return Tetromino.id(type as TETROMINO_TYPE);
-  }
-
-// テトリスのフィールドのマス目が空白であれば、
-// 落下中のテトリミノの描画範囲をチェックする
+const canDropCurrentTetromino = (): boolean => {
   const { x, y } = tetromino.position;
-  const { data } = tetromino.current;
+  const droppedPosition = {x, y: y + 1};
 
-// 落下中のテトリミノの描画範囲のマス目をチェックする
-// マス目が空白以外であれば、対応するテトリミノの識別子を返却する
-  if (y <= _y && _y < y + data.length) {
-    const cols = data[_y - y];
-    if (x <= _x && _x < x + cols.length) {
-      if (cols[_x - x] > 0) {
-        return Tetromino.id(cols[_x - x] as TETROMINO_TYPE);
-      }
-    }
-  }
+  const data = tetromino.current.data;
+  return tetris.field.canMove(data, droppedPosition);
+}
 
-  return "";
+  const nextTetrisField = () => {
+  const data = tetromino.current.data;
+  const position = tetromino.position;
+
+  tetris.field.update(data, position);
+
+  staticField = new Field(tetris.field.data);
+  tetris.field = Field.deepCopy(staticField);
+
+  tetromino.current = Tetromino.random();
+  tetromino.position = { x: 3, y: 0 };
 }
 
 // テトリスの落下動作を記述
 setInterval(() => {
   tetris.field = Field.deepCopy(staticField);
 
-  tetromino.position.y++;
-  tetris.field.update(tetromino.current.data, tetromino.position);
+  if(canDropCurrentTetromino()) {
+    tetromino.position.y++;
+  } else {
+    nextTetrisField();
+  }
 }, 1 * 1000);
 tetris.field.update(tetromino.current.data, tetromino.position);
 
