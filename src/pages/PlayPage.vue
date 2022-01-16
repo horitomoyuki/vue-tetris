@@ -2,7 +2,7 @@
 import { reactive } from "vue";
 import { Tetromino, TETROMINO_TYPE } from '../common/Tetromino';
 import { Field } from '../common/Field';
-import TetrominoPreviewComponent from '../components/TetrominoPreviewComponent.vue';
+import TetrominoPreviewComponent from '../components/TetrominoPreviewComponent.vue'
 
 // フィールドを保持する
 let staticField = new Field();
@@ -27,7 +27,7 @@ const canDropCurrentTetromino = (): boolean => {
   return tetris.field.canMove(data, droppedPosition);
 }
 
-  const nextTetrisField = () => {
+const nextTetrisField = () => {
   const data = tetromino.current.data;
   const position = tetromino.position;
 
@@ -41,18 +41,57 @@ const canDropCurrentTetromino = (): boolean => {
   tetromino.position = { x: 3, y: 0 };
 }
 
-// テトリスの落下動作を記述
-setInterval(() => {
-  tetris.field = Field.deepCopy(staticField);
+const onKeyDown = (e: KeyboardEvent) => {
+  switch (e.key) {
+    case "Down":
+    case "ArrowDown":
+      if(canDropCurrentTetromino()) {
+        tetromino.position.y++;
 
-  if(canDropCurrentTetromino()) {
-    tetromino.position.y++;
-  } else {
-    nextTetrisField();
+        // resetDrop 関数で矢印キーで下に移動した直後は、
+        // 1秒ごとに 1マス下に落下する処理をリセットして
+        // 一気に 2マス下に移動してしまう事象を防ぐ
+        resetDrop();
+      } else {
+        nextTetrisField();
+      }
+      break;
   }
-}, 1 * 1000);
-tetris.field.update(tetromino.current.data, tetromino.position);
+}
 
+// 1 秒ごとに 1 マス下に落下する関数を作成する関数
+const resetDropInterval = () => {
+  // 1秒ごとに発火する関数の識別子
+  let intervalId = -1;
+
+  return () => {
+    // 1 秒ごとに発火する処理が既に実行済みの場合は、
+    // その処理を破棄することで 1 秒ごとに 1 マス下に落下する処理を一旦解除する
+    if (intervalId !== -1) clearInterval(intervalId);
+
+    // 1 秒ごとに 1 マス下に落下する処理を再び発火させる
+    // `intervalId` には 1 秒ごとに発火する処理の識別子を格納する
+    intervalId = setInterval(() => {
+      tetris.field = Field.deepCopy(staticField);
+
+      if(canDropCurrentTetromino()) {
+        tetromino.position.y++;
+      } else {
+        nextTetrisField();
+      }
+    }, 1 * 1000);
+  };
+};
+
+// 1 秒ごとに 1 マス下に落下する処理をリセットする関数を作成する
+const resetDrop = resetDropInterval();
+
+// プレイページの呼び出し直後に 1 秒ごとに 1 マス下に落下する処理を発火させる
+resetDrop();
+
+
+const resetDrop = resetDropInterval();
+resetDrop();
 </script>
 
 <template>
