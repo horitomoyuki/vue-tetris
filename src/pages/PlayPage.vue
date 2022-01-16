@@ -1,8 +1,56 @@
 <script lang="ts" setup>
+import { reactive } from "vue";
+import { Tetromino, TETROMINO_TYPE } from '../common/Tetromino';
+import { Field } from '../common/Field';
 
-  const classBlockColor = (x: number, y: number): string => {
+// フィールドを保持する
+let staticField = new Field();
 
+// テトリミノ落下中のテトリスのフィールドを保持
+const tetris = reactive({
+  field: new Field(),
+});
+// 落下中のテトリミノの状態を保持する
+const tetromino = reactive({
+  current: Tetromino.random(),
+  position: { x: 3, y: 0 },
+});
+
+// マス目の状態を元に対応したテトリミノの識別子 (クラス名) を取得する
+const classBlockColor = (_x: number, _y: number): string => {
+  const type = tetris.field.data[_y][_x];
+  if(type > 0) {
+    return Tetromino.id(type as TETROMINO_TYPE);
   }
+
+// テトリスのフィールドのマス目が空白であれば、
+// 落下中のテトリミノの描画範囲をチェックする
+  const { x, y } = tetromino.position;
+  const { data } = tetromino.current;
+
+// 落下中のテトリミノの描画範囲のマス目をチェックする
+// マス目が空白以外であれば、対応するテトリミノの識別子を返却する
+  if (y <= _y && _y < y + data.length) {
+    const cols = data[_y - y];
+    if (x <= _x && _x < x + cols.length) {
+      if (cols[_x - x] > 0) {
+        return Tetromino.id(cols[_x - x] as TETROMINO_TYPE);
+      }
+    }
+  }
+
+  return "";
+}
+
+// テトリスの落下動作を記述
+setInterval(() => {
+  tetris.field = Field.deepCopy(staticField);
+
+  tetromino.position.y++;
+  tetris.field.update(tetromino.current.data, tetromino.position);
+}, 1 * 1000);
+tetris.field.update(tetromino.current.data, tetromino.position);
+
 </script>
 
 <template>
@@ -11,7 +59,7 @@
 
   <div class="container">
     <table class="field" style="border-collapse: collapse">
-      <tr v-for="(row, y) in field" :key="y">
+      <tr v-for="(row, y) in tetris.field.data" :key="y">
         <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.) -->
         <td
           class="block"
